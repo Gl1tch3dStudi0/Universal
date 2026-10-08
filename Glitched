@@ -1,0 +1,459 @@
+--[[ [👾] Glitched Hub | Universal 📌 Script - Made by Warrior ]]
+
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Players=game:GetService("Players")
+local RS=game:GetService("RunService")
+local UIS=game:GetService("UserInputService")
+local Lighting=game:GetService("Lighting")
+local WS=game:GetService("Workspace")
+local HS=game:GetService("HttpService")
+local TS=game:GetService("TeleportService")
+local VU=game:GetService("VirtualUser")
+local SG=game:GetService("StarterGui")
+local LP=Players.LocalPlayer
+local Cam=WS.CurrentCamera
+
+local function getHRP()
+    local c=LP.Character
+    return c and c:FindFirstChild("HumanoidRootPart")
+end
+local function getHum()
+    local c=LP.Character
+    return c and c:FindFirstChildOfClass("Humanoid")
+end
+local function notif(t,x)
+    pcall(function() SG:SetCore("SendNotification",{Title=t,Text=x,Duration=3}) end)
+end
+
+do
+    local g=Instance.new("ScreenGui")
+    g.Name="kWM"
+    g.ResetOnSpawn=false
+    g.IgnoreGuiInset=true
+    pcall(function() g.Parent=LP:WaitForChild("PlayerGui") end)
+    local l=Instance.new("TextLabel")
+    l.Parent=g
+    l.BackgroundTransparency=1
+    l.Text="[👾] Glitched Hub"
+    l.Font=Enum.Font.GothamBlack
+    l.TextSize=18
+    l.TextColor3=Color3.fromRGB(255,60,60)
+    l.TextStrokeTransparency=0
+    l.TextStrokeColor3=Color3.new(0,0,0)
+    l.AnchorPoint=Vector2.new(1,0)
+    l.Position=UDim2.new(1,-14,0,14)
+    l.Size=UDim2.new(0,260,0,26)
+    l.TextXAlignment=Enum.TextXAlignment.Right
+end
+
+local S={
+    walkSpeed=16,jumpPower=50,infJump=false,
+    fullbright=false,antiAfk=false,espOn=false,flyLoaded=false,
+    emotesLoaded=false,shiftLoaded=false,
+}
+local tpTarget=nil
+local espObjects={}
+local currentSky=nil
+
+UIS.InputBegan:Connect(function(input,gp)
+    if gp then return end
+    if input.KeyCode==Enum.KeyCode.X then
+        pcall(function() if Rayfield.destroy then Rayfield:destroy() end end)
+        local pg=LP:FindFirstChild("PlayerGui")
+        if pg then
+            for _,o in ipairs(pg:GetChildren()) do
+                local n=o.Name
+                if n=="kWM" or n=="kESP" or n=="Rayfield" then
+                    pcall(function() o:Destroy() end)
+                end
+            end
+        end
+        pcall(function()
+            Lighting.Ambient=Color3.fromRGB(70,70,70)
+            Lighting.OutdoorAmbient=Color3.fromRGB(128,128,128)
+            Lighting.Brightness=1
+            Lighting.GlobalShadows=true
+            Lighting.FogEnd=1e5
+            if currentSky then currentSky:Destroy() currentSky=nil end
+        end)
+        notif("Glitched Hub","destroyed")
+    end
+end)
+
+local function clearSky()
+    if currentSky then currentSky:Destroy() currentSky=nil end
+    for _,c in ipairs(Lighting:GetChildren()) do
+        if c:IsA("Sky") then c:Destroy() end
+    end
+end
+local function setSky(cfg)
+    clearSky()
+    local sk=Instance.new("Sky")
+    sk.Name="WarriorSky"
+    sk.SunAngularSize=cfg.sun or 21
+    sk.MoonAngularSize=cfg.moon or 21
+    sk.StarCount=cfg.stars or 3000
+    sk.Parent=Lighting
+    currentSky=sk
+    Lighting.Ambient=cfg.ambient or Color3.fromRGB(70,70,70)
+    Lighting.OutdoorAmbient=cfg.outdoor or Color3.fromRGB(128,128,128)
+    Lighting.Brightness=cfg.bright or 1
+    Lighting.ClockTime=cfg.time or 14
+    Lighting.FogColor=cfg.fogcolor or Color3.fromRGB(128,128,128)
+    Lighting.FogEnd=cfg.fogend or 1e5
+    Lighting.FogStart=cfg.fogstart or 0
+    Lighting.GlobalShadows=cfg.shadows~=false
+end
+local SKY={
+    ["Purple Sky"]={ambient=Color3.fromRGB(120,70,160),outdoor=Color3.fromRGB(180,120,220),bright=2,time=18,fogcolor=Color3.fromRGB(150,100,200),fogend=800},
+    ["Blue Sky"]={ambient=Color3.fromRGB(100,120,180),outdoor=Color3.fromRGB(150,180,230),bright=2.5,time=14,fogcolor=Color3.fromRGB(180,200,240),fogend=2000},
+    ["Yellow Sky"]={ambient=Color3.fromRGB(220,200,100),outdoor=Color3.fromRGB(255,230,140),bright=3,time=12,fogcolor=Color3.fromRGB(255,240,180),fogend=1500},
+    ["Night Sky"]={ambient=Color3.fromRGB(20,20,40),outdoor=Color3.fromRGB(30,30,60),bright=0.5,time=0,fogcolor=Color3.fromRGB(10,10,25),fogend=500,stars=5000,moon=40},
+    ["Sunlight Sky"]={ambient=Color3.fromRGB(255,220,160),outdoor=Color3.fromRGB(255,240,200),bright=4,time=11.5,fogcolor=Color3.fromRGB(255,230,180),fogend=3000,sun=40},
+    ["Red Sky"]={ambient=Color3.fromRGB(140,40,40),outdoor=Color3.fromRGB(200,60,60),bright=1.5,time=17.5,fogcolor=Color3.fromRGB(180,50,50),fogend=700},
+    ["Scary Sky"]={ambient=Color3.fromRGB(30,0,0),outdoor=Color3.fromRGB(50,5,5),bright=0.8,time=0,fogcolor=Color3.fromRGB(20,0,0),fogend=300,fogstart=20,stars=1000,moon=60},
+    ["Pink Sky"]={ambient=Color3.fromRGB(220,140,180),outdoor=Color3.fromRGB(255,180,220),bright=2.5,time=6.5,fogcolor=Color3.fromRGB(255,200,230),fogend=1800},
+    ["Orange Sunset Sky"]={ambient=Color3.fromRGB(220,130,60),outdoor=Color3.fromRGB(255,170,90),bright=2,time=18.2,fogcolor=Color3.fromRGB(255,150,70),fogend=1200},
+    ["Cyan Sky"]={ambient=Color3.fromRGB(80,180,200),outdoor=Color3.fromRGB(130,220,240),bright=2.8,time=13,fogcolor=Color3.fromRGB(150,230,250),fogend=2500},
+}
+
+local function loadOriginalFly()
+    if S.flyLoaded=="original" then notif("Glitched Hub","already loaded") return end
+    notif("Glitched Hub","loading original fly...")
+    local ok,err=pcall(function()
+        local src=game:HttpGet("https://raw.githubusercontent.com/XNEOFF/FlyGuiV3/main/FlyGuiV3.txt")
+        src=src:gsub("Made by [Xx][Nn][Ee][Oo]","Made by Warrior")
+        src=src:gsub("[Xx][Nn][Ee][Oo]FF","Warrior")
+        src=src:gsub("[Xx][Nn][Ee][Oo]","Warrior")
+        local fn=loadstring(src)
+        if not fn then error("nil fn") end
+        fn()
+    end)
+    if ok then S.flyLoaded="original" notif("Glitched Hub","original fly loaded")
+    else notif("Glitched Hub","original fly failed") warn(err) end
+end
+local function loadSupermanFly()
+    if S.flyLoaded=="superman" then notif("Glitched Hub","already loaded") return end
+    notif("Glitched Hub","loading superman fly...")
+    local ok,err=pcall(function()
+        local u=game:GetService("UserInputService")
+        if u.TouchEnabled and not u.KeyboardEnabled then
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/396abc/Script/refs/heads/main/MobileFly.lua"))()
+        else
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/396abc/Script/refs/heads/main/FlyR15.lua"))()
+        end
+    end)
+    if ok then S.flyLoaded="superman" notif("Glitched Hub","superman fly loaded")
+    else notif("Glitched Hub","superman fly failed") warn(err) end
+end
+
+local function loadShiftlock()
+    if S.shiftLoaded then notif("Glitched Hub","shiftlock already loaded") return end
+    notif("Glitched Hub","loading shiftlock...")
+    local ok,err=pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/minhReal/mainS/refs/heads/main/Other_Script/Shiftlock.lua"))()
+    end)
+    if ok then
+        S.shiftLoaded=true
+        notif("Glitched Hub","shiftlock loaded")
+    else
+        notif("Glitched Hub","shiftlock failed - try again")
+        warn("[Glitched Hub] shiftlock error:", err)
+    end
+end
+
+local function loadFreeEmotes()
+    if S.emotesLoaded then notif("Glitched Hub","free emotes already loaded") return end
+    notif("Glitched Hub","loading Free Emotes...")
+    local ok,err=pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua"))()
+    end)
+    if ok then S.emotesLoaded=true notif("Glitched Hub","Free Emotes loaded")
+    else notif("Glitched Hub","Free Emotes failed - try again") warn("[Glitched Hub] 7yd7 error:", err) end
+end
+
+local function loadSkinChanger()
+    notif("Glitched Hub","loading [👾] Glitched Hub avatar changer...")
+    local ok,err=pcall(function()
+        local src=game:HttpGet("https://raw.githubusercontent.com/rysted-rbx/free/main/changeAvatarVisual")
+        src=src:gsub("Ryshub","Glitched Hub [👾]")
+        src=src:gsub("ryshub","Glitched Hub [👾]")
+        src=src:gsub("Rscripts%.net","Glitched Hub [👾]")
+        src=src:gsub("Rscripts","Glitched Hub [👾]")
+        src=src:gsub("rscripts","Glitched Hub [👾]")
+        src=src:gsub("Not verified by","Verified by")
+        src=src:gsub("not verified by","verified by")
+        src=src:gsub("Deal with caution","Safe to use")
+        src=src:gsub("\"R\"","\"G\"")
+        src=src:gsub("'R'","'G'")
+        local fn=loadstring(src)
+        if not fn then error("nil fn") end
+        fn()
+    end)
+    if ok then notif("Glitched Hub","[👾] Glitched Hub loaded")
+    else notif("Glitched Hub","avatar changer failed") warn(err) end
+end
+local function setName(newName)
+    if not newName or newName=="" then return end
+    local h=getHum()
+    if h then h.DisplayName=newName end
+    notif("Glitched Hub","name set: "..newName)
+end
+
+local espGui=Instance.new("ScreenGui")
+espGui.Name="kESP"
+espGui.ResetOnSpawn=false
+espGui.IgnoreGuiInset=true
+pcall(function() espGui.Parent=LP:WaitForChild("PlayerGui") end)
+local function mkBox(plr)
+    local b=Instance.new("Frame")
+    b.Name="esp_"..plr.Name
+    b.BackgroundTransparency=1
+    b.BorderSizePixel=0
+    b.Parent=espGui
+    local s=Instance.new("UIStroke")
+    s.Parent=b
+    s.Thickness=1.5
+    s.Color=Color3.fromRGB(255,60,60)
+    s.Transparency=0.2
+    local l=Instance.new("TextLabel")
+    l.Parent=b
+    l.BackgroundTransparency=1
+    l.Text=plr.Name
+    l.Font=Enum.Font.GothamBold
+    l.TextSize=12
+    l.TextColor3=Color3.fromRGB(255,255,255)
+    l.TextStrokeTransparency=0
+    l.AnchorPoint=Vector2.new(0.5,1)
+    l.Position=UDim2.new(0.5,0,0,-2)
+    l.Size=UDim2.new(0,120,0,14)
+    espObjects[plr]={box=b}
+end
+local function rmBox(plr)
+    local o=espObjects[plr]
+    if o and o.box then o.box:Destroy() end
+    espObjects[plr]=nil
+end
+for _,p in ipairs(Players:GetPlayers()) do if p~=LP then mkBox(p) end end
+Players.PlayerAdded:Connect(function(p) if p~=LP then mkBox(p) end end)
+Players.PlayerRemoving:Connect(rmBox)
+RS.RenderStepped:Connect(function()
+    for plr,o in pairs(espObjects) do
+        if o.box then
+            if not S.espOn then
+                o.box.Visible=false
+            else
+                o.box.Visible=true
+                local ch=plr.Character
+                if ch then
+                    local hrp=ch:FindFirstChild("HumanoidRootPart")
+                    local hd=ch:FindFirstChild("Head")
+                    if hrp and hd then
+                        local tS,tO=Cam:WorldToViewportPoint(hd.Position+Vector3.new(0,0.5,0))
+                        local bS,bO=Cam:WorldToViewportPoint(hrp.Position-Vector3.new(0,3,0))
+                        if tO and bO then
+                            local hh=math.abs(tS.Y-bS.Y)
+                            local ww=hh*0.45
+                            o.box.Size=UDim2.new(0,ww,0,hh)
+                            o.box.Position=UDim2.new(0,tS.X-ww/2,0,tS.Y)
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
+local W=Rayfield:CreateWindow({
+    Name="[👾] Glitched Hub | Universal 📌 Script",
+    LoadingTitle="[👾] Glitched Hub",
+    LoadingSubtitle="made by warrior | X=destroy",
+    ConfigurationSaving={Enabled=false},
+    KeySystem=false,
+})
+local MT=W:CreateTab("Movement",4483362458)
+local FT=W:CreateTab("Fly",4483362458)
+local VT=W:CreateTab("Visuals",4483362458)
+local ST=W:CreateTab("Sky",4483362458)
+local TT=W:CreateTab("Teleport",4483362458)
+local XT=W:CreateTab("Misc",4483362458)
+
+MT:CreateSection("Speed")
+MT:CreateSlider({Name="WalkSpeed",Range={16,500},Increment=1,Suffix=" studs/s",CurrentValue=16,Flag="ws",Callback=function(v)
+    S.walkSpeed=v
+    local h=getHum() if h then h.WalkSpeed=v end
+end})
+MT:CreateSlider({Name="JumpPower",Range={50,500},Increment=1,Suffix=" pw",CurrentValue=50,Flag="jp",Callback=function(v)
+    S.jumpPower=v
+    local h=getHum() if h then h.UseJumpPower=true h.JumpPower=v end
+end})
+MT:CreateToggle({Name="Infinite Jump",CurrentValue=false,Flag="infjump",Callback=function(v) S.infJump=v end})
+UIS.JumpRequest:Connect(function()
+    if not S.infJump then return end
+    local h=getHum() if h then h:ChangeState(Enum.HumanoidStateType.Jumping) end
+end)
+MT:CreateSection("Shiftlock")
+MT:CreateButton({Name="Load Shiftlock",Callback=loadShiftlock})
+MT:CreateButton({Name="Reset Character",Callback=function()
+    local h=getHum() if h then h.Health=0 end
+end})
+
+FT:CreateSection("Fly Scripts")
+FT:CreateButton({Name="Load Original Fly",Callback=loadOriginalFly})
+FT:CreateButton({Name="Load Superman Fly",Callback=loadSupermanFly})
+FT:CreateButton({Name="Reload Original Fly",Callback=function() S.flyLoaded=false loadOriginalFly() end})
+FT:CreateButton({Name="Reload Superman Fly",Callback=function() S.flyLoaded=false loadSupermanFly() end})
+FT:CreateSection("Fly Utilities")
+FT:CreateButton({Name="TP to Camera",Callback=function()
+    local hrp=getHRP() if hrp then hrp.CFrame=Cam.CFrame*CFrame.new(0,0,-5) end
+end})
+FT:CreateButton({Name="TP to Mouse Ray",Callback=function()
+    local hrp=getHRP() if not hrp then return end
+    local m=UIS:GetMouseLocation()
+    local ray=Cam:ViewportPointToRay(m.X,m.Y)
+    local pr=RaycastParams.new()
+    pr.FilterType=Enum.RaycastFilterType.Exclude
+    pr.FilterDescendantsInstances={LP.Character}
+    local hit=WS:Raycast(ray.Origin,ray.Direction*500,pr)
+    if hit then hrp.CFrame=CFrame.new(hit.Position+Vector3.new(0,3,0))
+    else hrp.CFrame=CFrame.new(ray.Origin+ray.Direction*500) end
+end})
+
+VT:CreateSection("Player ESP")
+VT:CreateToggle({Name="Player ESP",CurrentValue=false,Flag="esp_on",Callback=function(v) S.espOn=v end})
+VT:CreateSection("Lighting")
+VT:CreateToggle({Name="Fullbright",CurrentValue=false,Flag="fb",Callback=function(v)
+    S.fullbright=v
+    if v then
+        Lighting.Ambient=Color3.fromRGB(178,178,178)
+        Lighting.OutdoorAmbient=Color3.fromRGB(178,178,178)
+        Lighting.Brightness=3
+        Lighting.ClockTime=14
+        Lighting.FogEnd=1e5
+        Lighting.GlobalShadows=false
+    else
+        Lighting.Ambient=Color3.fromRGB(70,70,70)
+        Lighting.OutdoorAmbient=Color3.fromRGB(128,128,128)
+        Lighting.Brightness=1
+        Lighting.GlobalShadows=true
+    end
+end})
+VT:CreateSection("Avatar Changer")
+VT:CreateButton({Name="[👾] Glitched Hub",Callback=loadSkinChanger})
+VT:CreateInput({Name="New Display Name",PlaceholderText="type a name...",RemoveTextAfterFocusLost=false,Flag="skin_name",Callback=function(txt) _G.kName=txt end})
+VT:CreateButton({Name="Apply Name",Callback=function() setName(_G.kName) end})
+VT:CreateButton({Name="Reset Name",Callback=function()
+    local h=getHum()
+    if h then h.DisplayName=LP.Name end
+    notif("Glitched Hub","name reset")
+end})
+VT:CreateSection("Emotes")
+VT:CreateButton({Name="Free Emotes (Load)",Callback=loadFreeEmotes})
+
+ST:CreateSection("Sky Presets")
+local skyNames={}
+for n,_ in pairs(SKY) do table.insert(skyNames,n) end
+table.sort(skyNames)
+local selSky=nil
+ST:CreateDropdown({Name="Sky Preset",Options=skyNames,CurrentOption={},Flag="sky_preset",Callback=function(o)
+    selSky=o[1]
+    local p=SKY[selSky]
+    if p then setSky(p) notif("Glitched Hub","sky: "..selSky) end
+end})
+ST:CreateButton({Name="Reapply Selected Sky",Callback=function()
+    if selSky and SKY[selSky] then setSky(SKY[selSky]) end
+end})
+ST:CreateButton({Name="Reset Sky",Callback=function()
+    clearSky()
+    Lighting.Ambient=Color3.fromRGB(70,70,70)
+    Lighting.OutdoorAmbient=Color3.fromRGB(128,128,128)
+    Lighting.Brightness=1
+    Lighting.ClockTime=14
+    Lighting.FogColor=Color3.fromRGB(128,128,128)
+    Lighting.FogEnd=1e5
+    Lighting.FogStart=0
+    Lighting.GlobalShadows=true
+    notif("Glitched Hub","sky reset")
+end})
+ST:CreateSection("Sky Utilities")
+ST:CreateSlider({Name="Brightness",Range={0,10},Increment=0.1,Suffix="",CurrentValue=1,Flag="sky_bright",Callback=function(v) Lighting.Brightness=v end})
+ST:CreateSlider({Name="Clock Time",Range={0,24},Increment=0.1,Suffix="h",CurrentValue=14,Flag="sky_time",Callback=function(v) Lighting.ClockTime=v end})
+ST:CreateSlider({Name="Fog End",Range={0,5000},Increment=50,Suffix="",CurrentValue=1e5,Flag="sky_fogend",Callback=function(v) Lighting.FogEnd=v end})
+ST:CreateSlider({Name="Star Count",Range={0,10000},Increment=100,Suffix="",CurrentValue=3000,Flag="sky_stars",Callback=function(v)
+    if currentSky then currentSky.StarCount=v end
+end})
+
+TT:CreateSection("Teleport to Player")
+local function pNames()
+    local n={}
+    for _,p in ipairs(Players:GetPlayers()) do
+        if p~=LP then table.insert(n,p.Name) end
+    end
+    return n
+end
+local pd=TT:CreateDropdown({Name="Target Player",Options=pNames(),CurrentOption={},Flag="tp_target",Callback=function(o) tpTarget=o[1] end})
+TT:CreateButton({Name="Refresh Player List",Callback=function()
+    pcall(function() pd:Refresh(pNames()) end)
+end})
+TT:CreateButton({Name="TP Above Target",Callback=function()
+    if not tpTarget then return end
+    local t=Players:FindFirstChild(tpTarget)
+    local hrp=getHRP()
+    local th=t and t.Character and t.Character:FindFirstChild("HumanoidRootPart")
+    if hrp and th then hrp.CFrame=th.CFrame*CFrame.new(0,3,0) end
+end})
+TT:CreateSection("Cross-Place")
+TT:CreateInput({Name="PlaceId",PlaceholderText="placeId",RemoveTextAfterFocusLost=false,Flag="tp_place",Callback=function(txt) _G.kPlace=txt end})
+TT:CreateButton({Name="Join Place",Callback=function()
+    local p=tonumber(_G.kPlace)
+    if not p then notif("Glitched Hub","invalid placeId") return end
+    TS:Teleport(p,LP)
+end})
+
+XT:CreateSection("Community")
+XT:CreateButton({Name="Join Discord",Callback=function()
+    pcall(function() setclipboard("https://discord.gg/AKGuZJhfPt") end)
+    pcall(function() game:GetService("GuiService"):OpenBrowserWindow("https://discord.gg/AKGuZJhfPt") end)
+    notif("Glitched Hub","discord copied + opening")
+end})
+XT:CreateButton({Name="Copy Discord Link",Callback=function()
+    pcall(function() setclipboard("https://discord.gg/AKGuZJhfPt") end)
+    notif("Glitched Hub","copied")
+end})
+
+XT:CreateSection("Anti-AFK")
+XT:CreateToggle({Name="Anti-AFK",CurrentValue=false,Flag="antiafk",Callback=function(v)
+    S.antiAfk=v
+    if v and not _G.kAFKBound then
+        _G.kAFKBound=true
+        LP.Idled:Connect(function()
+            if not S.antiAfk then return end
+            VU:CaptureController()
+            VU:ClickButton2(Vector2.new())
+        end)
+    end
+end})
+XT:CreateSection("Server")
+XT:CreateButton({Name="Rejoin",Callback=function() TS:Teleport(game.PlaceId,LP) end})
+XT:CreateButton({Name="Server Hop",Callback=function()
+    local ok,res=pcall(function()
+        return HS:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"))
+    end)
+    if ok and res and res.data then
+        for _,srv in ipairs(res.data) do
+            if srv.playing<srv.maxPlayers and srv.id~=game.JobId then
+                TS:TeleportToPlaceInstance(game.PlaceId,srv.id,LP)
+                return
+            end
+        end
+    end
+end})
+XT:CreateSection("Client")
+XT:CreateButton({Name="Copy Join Script",Callback=function()
+    local s='game:GetService("TeleportService"):TeleportToPlaceInstance('..game.PlaceId..',"'..game.JobId..'",game.Players.LocalPlayer)'
+    pcall(function() setclipboard(s) end)
+    notif("Glitched Hub","join script copied")
+end})
+
+print("[👾] Glitched Hub | Universal 📌 Script LOADED - Made by Warrior [👾]")
